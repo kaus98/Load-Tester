@@ -21,6 +21,7 @@ type LoadBalancer struct {
 
 	Counter             int
 	IntervalCounter     int
+	RequestTimeout      time.Duration
 	TotalRequestTime    time.Duration
 	IntervalRequestTime time.Duration
 	LogTime             time.Duration
@@ -40,12 +41,13 @@ type LoadBalancer struct {
 
 func (lb *LoadBalancer) PopulateConfig() {
 	//Endpoint details here
-	lb.httpAddress = ""
-	lb.httpData = ``
+	lb.httpAddress = "https://10.49.64.118:5705/SecureConnectGateway/redfish/alerts/v1/curlId"
+	lb.httpData = `{"@odata.context":"/redfish/v1/$metadata#Event.Event","@odata.id":"/redfish/v1/EventService/Events/81b3636a-9cc6-11ed-a45d-4cd98f1cf15a","@odata.type":"#Event.v1_5_0.Event","Context":"Public","Events":[{"Context":"Public","EventId":"2241","EventTimestamp":"2023-01-27T08:45:33-0600","EventType":"Alert","MemberId":"14572","Message":"CPU 1 has a thermal trip (over-temperature) event.","MessageArgs":["1"],"MessageArgs@odata.count":1,"MessageId":"CPU0001","MessageSeverity":"Critical","Severity":"Critical"}],"Id":"81b3636a-9cc6-11ed-a45d-4cd98f1cf15a","Name":"Event Array"}`
 	lb.httpMethod = "POST"
 	lb.httpHeader = make(map[string]string)
 	lb.httpHeader["Content-Type"] = "text/plain"
 	lb.tlsSkipVerify = true
+	lb.RequestTimeout = 10
 
 	//Rquests Meta data here
 	lb.CounterLimit = 2000 //Number of requests to send
@@ -73,7 +75,10 @@ func (lb *LoadBalancer) CreateClient() (*http.Client, error) {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: lb.tlsSkipVerify},
 	}
 
-	client := &http.Client{Transport: tr}
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   lb.RequestTimeout * time.Second,
+	}
 
 	return client, nil
 }
@@ -118,7 +123,10 @@ func (lb *LoadBalancer) SThread() {
 		res, err := client.Do(req)
 
 		if err != nil {
-			fmt.Println(err)
+			// fmt.Println(err)
+			rrd = ResponseDetails{ttime, time.Now(), 408}
+			lb.Response <- rrd
+
 			// return
 		} else {
 			rrd = ResponseDetails{ttime, time.Now(), res.StatusCode}
