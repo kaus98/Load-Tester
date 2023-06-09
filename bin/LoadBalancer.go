@@ -41,8 +41,8 @@ type LoadBalancer struct {
 
 func (lb *LoadBalancer) PopulateConfig() {
 	//Endpoint details here
-	lb.httpAddress = "https://10.49.64.118:5705/SecureConnectGateway/redfish/alerts/v1/curlId"
-	lb.httpData = `{"@odata.context":"/redfish/v1/$metadata#Event.Event","@odata.id":"/redfish/v1/EventService/Events/81b3636a-9cc6-11ed-a45d-4cd98f1cf15a","@odata.type":"#Event.v1_5_0.Event","Context":"Public","Events":[{"Context":"Public","EventId":"2241","EventTimestamp":"2023-01-27T08:45:33-0600","EventType":"Alert","MemberId":"14572","Message":"CPU 1 has a thermal trip (over-temperature) event.","MessageArgs":["1"],"MessageArgs@odata.count":1,"MessageId":"CPU0001","MessageSeverity":"Critical","Severity":"Critical"}],"Id":"81b3636a-9cc6-11ed-a45d-4cd98f1cf15a","Name":"Event Array"}`
+	lb.httpAddress = "API Link Here"
+	lb.httpData = `Data Here`
 	lb.httpMethod = "POST"
 	lb.httpHeader = make(map[string]string)
 	lb.httpHeader["Content-Type"] = "text/plain"
@@ -99,17 +99,13 @@ func (lb *LoadBalancer) CreateRequest() (*http.Request, error) {
 func (lb *LoadBalancer) SThread() {
 	defer lb.WG.Done()
 
-	client, _ := lb.CreateClient()
-	req, err := lb.CreateRequest()
+	
 
 	var ttime time.Time
 	var rrd ResponseDetails
 	sch := true
 
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	
 	for {
 
 		lb.MuxLock.RLock()
@@ -117,6 +113,12 @@ func (lb *LoadBalancer) SThread() {
 		lb.MuxLock.RUnlock()
 
 		if !sch {
+			return
+		}
+		client, _ := lb.CreateClient()
+		req, err := lb.CreateRequest()
+		if err != nil {
+			fmt.Println(err)
 			return
 		}
 		ttime = time.Now()
